@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.database.statefulset.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.database.label.app }}
+spec:
+  serviceName: {{ .Values.database.service.name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.database.label.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.database.label.app }}
+    spec:
+      containers:
+        - name: {{ .Values.database.container.name }}
+          image: {{ .Values.database.image.name }}:{{ .Values.database.image.version }}
+          ports:
+            - containerPort: {{ .Values.database.container.port }}
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.database.username }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.database.password }}
+            - name: PGDATA
+              value: {{ .Values.database.storagePath }}
+            - name: POSTGRES_MULTIPLE_DATABASES
+              value: users,posts
+          volumeMounts:
+            - name: init-db-scripts
+              mountPath: /docker-entrypoint-initdb.d/
+            - name: postgres-data
+              mountPath: {{ .Values.database.storagePath }}
+      volumes:
+        - name: init-db-scripts
+          configMap:
+            name: init-db-scripts
+        - name: postgres-data
+          hostPath:
+            path: /var/lib/postgresql
+            type: DirectoryOrCreate
+
+
+---
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.database.service.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Values.database.label.app }}
+  ports:
+    - protocol: TCP
+      port: {{ .Values.database.service.port }}
+      targetPort: {{ .Values.database.container.port }}
