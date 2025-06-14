@@ -29,7 +29,7 @@ spec:
             - name: PGDATA
               value: {{ .Values.database.storagePath }}
             - name: POSTGRES_MULTIPLE_DATABASES
-              value: users,posts
+              value: auth_db,users_db,posts_db
           volumeMounts:
             - name: init-db-scripts
               mountPath: /docker-entrypoint-initdb.d/
